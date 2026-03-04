@@ -357,11 +357,11 @@ export default {
         '--pp-card-radius': ((props.content && props.content.cardBorderRadius) || 8) + 'px',
         '--pp-label-color': (props.content && props.content.labelTextColor) || '#6b7280',
         '--pp-value-color': (props.content && props.content.valueTextColor) || '#111827',
-        '--pp-gap': ((props.content && props.content.cardGap) || 16) + 'px',
+        '--pp-gap': ((props.content && props.content.cardGap) || 24) + 'px',
         '--pp-font-size': ((props.content && props.content.fontSize) || 14) + 'px',
         display: 'flex',
         flexDirection: 'column',
-        gap: ((props.content && props.content.cardGap) || 16) + 'px',
+        gap: ((props.content && props.content.cardGap) || 24) + 'px',
         width: '100%',
       };
     });
@@ -423,16 +423,16 @@ export default {
     const getEditButtonStyle = function(id) {
       const isActive = activeState.value[id + '-edit'];
       const isHovered = hoverState.value[id + '-edit'];
-      const base = resolvedOutlineColor.value;
-      const darkened = isActive ? darken(base, 40) : (isHovered ? darken(base, 20) : base);
+      const base = resolvedPrimaryColor.value;
+      const bg = isActive ? darken(base, 40) : (isHovered ? darken(base, 20) : base);
       return {
-        backgroundColor: isHovered ? darkened : '#ffffff',
-        color: isHovered ? '#ffffff' : base,
-        borderColor: darkened,
+        backgroundColor: bg,
+        color: '#ffffff',
+        borderColor: bg,
         fontSize: ((props.content && props.content.fontSize) || 14) + 'px',
-        boxShadow: (isHovered && !isActive) ? '0 2px 8px rgba(0,0,0,0.15)' : 'none',
+        boxShadow: (isHovered && !isActive) ? '0 2px 8px rgba(0,0,0,0.18)' : '0 1px 3px rgba(0,0,0,0.10)',
         transform: isActive ? 'scale(0.97)' : 'scale(1)',
-        transition: 'background-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease, transform 0.1s ease',
+        transition: 'background-color 0.15s ease, box-shadow 0.15s ease, transform 0.1s ease',
       };
     };
 
@@ -649,12 +649,12 @@ export default {
   display: flex;
   flex-direction: column;
   gap: 0;
-  background: var(--pp-card-bg, #ffffff);
-  border: 2px solid var(--pp-primary, #2d6a4f);
+  background: #ffffff;
+  border: 1.5px solid #9ca3af;
   border-radius: var(--pp-card-radius, 8px);
   font-size: var(--pp-font-size, 14px);
   overflow: hidden;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+  box-shadow: 0 3px 10px rgba(0,0,0,0.10);
 }
 
 /* Action row */
@@ -664,8 +664,8 @@ export default {
   align-items: center;
   gap: 10px;
   padding: 12px 16px 10px 16px;
-  background: #f0f7f4;
-  border-bottom: 1px solid #c9e0d6;
+  background: #ffffff;
+  border-bottom: 1px solid #e5e7eb;
 }
 
 .read-only-hint {
@@ -706,11 +706,7 @@ export default {
 
 /* Read-only fields */
 .readonly-field {
-  background: #f9fafb;
-}
-
-.readonly-field:last-of-type {
-  border-bottom: none;
+  background: #ffffff;
 }
 
 /* Field rows */
@@ -817,8 +813,8 @@ export default {
   align-items: center;
   gap: 8px;
   padding: 8px 16px 10px 16px;
-  background: #f0f7f4;
-  border-top: 1px solid #c9e0d6;
+  background: #ffffff;
+  border-top: 1px solid #e5e7eb;
 }
 
 .btn-icon-action {
