@@ -543,7 +543,7 @@ export default {
   flex-direction: row;
   align-items: center;
   gap: 8px;
-  margin-bottom: 4px;
+  margin-bottom: 16px;
   width: 100%;
 }
 
@@ -656,7 +656,7 @@ export default {
   font-size: var(--pp-font-size, 14px);
   overflow: hidden;
   box-shadow: 0 3px 10px rgba(0,0,0,0.10);
-  margin-bottom: 24px;
+  margin-bottom: 16px;
 }
 
 /* Action row */
