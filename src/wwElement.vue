@@ -1,7 +1,44 @@
 <template>
   <div class="pp-card-list" :style="containerStyle">
+
+    <!-- Filter Bar -->
+    <div class="filter-bar">
+      <div class="filter-search-wrap">
+        <svg class="filter-search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="11" cy="11" r="8" stroke="#9ca3af" stroke-width="2"/>
+          <path d="M21 21l-4.35-4.35" stroke="#9ca3af" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+        <input
+          class="filter-search"
+          type="text"
+          placeholder="Page Name"
+          :value="searchText"
+          @input="onSearchInput"
+        />
+        <button v-if="searchText" class="filter-clear-btn" type="button" @click="clearSearch" aria-label="Clear search">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M18 6L6 18M6 6l12 12" stroke="#9ca3af" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+        </button>
+      </div>
+      <div class="filter-select-wrap">
+        <select class="filter-select" :value="statusFilter" @change="onStatusChange">
+          <option value="all">All</option>
+          <option value="enabled">Active Public Pages</option>
+          <option value="disabled">Inactive Public Pages</option>
+        </select>
+        <button v-if="statusFilter !== 'all'" class="filter-clear-btn filter-clear-select" type="button" @click="clearStatus" aria-label="Clear status">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M18 6L6 18M6 6l12 12" stroke="#9ca3af" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+        </button>
+      </div>
+      <button class="filter-reset" type="button" @click="resetFilters">Reset</button>
+    </div>
+
+    <!-- Cards -->
     <div
-      v-for="item in processedItems"
+      v-for="item in filteredItems"
       :key="item.id"
       class="pp-card"
       :style="cardStyle"
@@ -9,7 +46,7 @@
       <!-- Action Row -->
       <div class="card-actions">
         <button
-          class="btn-action btn-edit"
+          class="btn-primary"
           :style="getEditButtonStyle(item.id)"
           type="button"
           @click="handleEdit(item)"
@@ -20,44 +57,39 @@
         >
           Edit
         </button>
+        <span class="read-only-hint">Tap Edit to make changes</span>
       </div>
 
       <!-- Active -->
-      <div class="card-field">
+      <div class="card-field readonly-field">
         <span class="field-label" :style="labelStyle">Active</span>
         <span class="field-value">
-          <span
-            class="status-badge"
-            :style="item.is_enabled ? activeBadgeStyle : inactiveBadgeStyle"
-          >
+          <span class="status-badge" :style="item.is_enabled ? activeBadgeStyle : inactiveBadgeStyle">
             {{ item.is_enabled ? 'Active' : 'Inactive' }}
           </span>
         </span>
       </div>
 
       <!-- Page Name + Folder Name -->
-      <div class="card-field card-field-column">
+      <div class="card-field readonly-field">
         <span class="field-label" :style="labelStyle">Page Name</span>
-        <span class="field-value page-name-value" :style="valueStyle">{{ item.name }}</span>
-        <span class="folder-name-sub" :style="labelStyle">Folder Name: {{ item.folder_name }}</span>
+        <span class="field-value field-value-right">
+          <span class="page-name-text" :style="valueStyle">{{ item.name }}</span>
+          <span class="folder-name-sub" :style="labelStyle">Folder: {{ item.folder_name }}</span>
+        </span>
       </div>
 
       <!-- File Types -->
-      <div class="card-field">
+      <div class="card-field readonly-field">
         <span class="field-label" :style="labelStyle">File Types</span>
         <span class="field-value file-types-value">
-          <span
-            v-for="badge in item.fileBadges"
-            :key="badge"
-            class="file-badge"
-            :style="fileBadgeStyle"
-          >{{ badge }}</span>
+          <span v-for="badge in item.fileBadges" :key="badge" class="file-badge" :style="fileBadgeStyle">{{ badge }}</span>
           <span v-if="!item.fileBadges.length" :style="valueStyle">—</span>
         </span>
       </div>
 
       <!-- Max Size -->
-      <div class="card-field">
+      <div class="card-field readonly-field">
         <span class="field-label" :style="labelStyle">Max Size</span>
         <span class="field-value" :style="valueStyle">{{ item.maxSizeDisplay }}</span>
       </div>
@@ -67,7 +99,7 @@
         <span class="field-label" :style="labelStyle">Page Instructions</span>
         <span class="field-value">
           <button
-            class="btn-action btn-instructions"
+            class="btn-outline-sm"
             :style="getInstructionsButtonStyle(item.id)"
             type="button"
             @click="handleInstructions(item)"
@@ -82,20 +114,16 @@
       </div>
 
       <!-- Expiry Date -->
-      <div class="card-field">
+      <div class="card-field readonly-field">
         <span class="field-label" :style="labelStyle">Expiry Date</span>
         <span class="field-value" :style="valueStyle">{{ item.expiryDisplay }}</span>
       </div>
 
       <!-- Captcha -->
-      <div class="card-field">
+      <div class="card-field readonly-field">
         <span class="field-label" :style="labelStyle">Captcha?</span>
         <span class="field-value checkbox-value">
-          <span
-            class="checkbox-box"
-            :style="item.captcha_required ? checkedBoxStyle : uncheckedBoxStyle"
-            aria-hidden="true"
-          >
+          <span class="checkbox-box" :style="item.captcha_required ? checkedBoxStyle : uncheckedBoxStyle" aria-hidden="true">
             <svg v-if="item.captcha_required" width="10" height="8" viewBox="0 0 10 8" fill="none" xmlns="http://www.w3.org/2000/svg">
               <path d="M1 4L3.5 6.5L9 1" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
             </svg>
@@ -104,35 +132,33 @@
       </div>
 
       <!-- Share + Link -->
-      <div class="card-actions card-actions-bottom">
+      <div class="card-actions-bottom">
         <button
-          class="btn-action btn-icon"
+          class="btn-icon-action"
           :style="getIconButtonStyle(item.id, 'share')"
           type="button"
-          title="Share"
           @click="handleShare(item)"
           @mouseenter="setHover(item.id, 'share', true)"
           @mouseleave="setHover(item.id, 'share', false)"
           @mousedown="setActive(item.id, 'share', true)"
           @mouseup="setActive(item.id, 'share', false)"
         >
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
             <path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8M16 6l-4-4-4 4M12 2v13" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
           </svg>
           Share
         </button>
         <button
-          class="btn-action btn-icon"
+          class="btn-icon-action"
           :style="getIconButtonStyle(item.id, 'link')"
           type="button"
-          title="Copy Link"
           @click="handleLink(item)"
           @mouseenter="setHover(item.id, 'link', true)"
           @mouseleave="setHover(item.id, 'link', false)"
           @mousedown="setActive(item.id, 'link', true)"
           @mouseup="setActive(item.id, 'link', false)"
         >
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
             <rect x="9" y="9" width="13" height="13" rx="2" ry="2" stroke="currentColor" stroke-width="2"/>
             <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1" stroke="currentColor" stroke-width="2"/>
           </svg>
@@ -142,9 +168,10 @@
     </div>
 
     <!-- Empty state -->
-    <div v-if="!processedItems.length" class="empty-state" :style="emptyStateStyle">
-      No public pages to display.
+    <div v-if="!filteredItems.length" class="empty-state" :style="emptyStateStyle">
+      No pages match your filters.
     </div>
+
   </div>
 </template>
 
@@ -166,9 +193,10 @@ export default {
 
   setup(props, { emit }) {
     /* wwEditor:start */
-    const isEditing = computed(() => props.wwEditorState?.isEditing);
+    const isEditing = computed(() => props.wwEditorState && props.wwEditorState.isEditing);
     /* wwEditor:end */
 
+    // Internal variables
     const { value: selectedItem, setValue: setSelectedItem } =
       wwLib.wwVariable.useComponentVariable({
         uid: props.uid,
@@ -185,39 +213,65 @@ export default {
         defaultValue: 0,
       });
 
+    const { value: filteredCount, setValue: setFilteredCount } =
+      wwLib.wwVariable.useComponentVariable({
+        uid: props.uid,
+        name: 'filteredCount',
+        type: 'number',
+        defaultValue: 0,
+      });
+
+    // Filter state
+    const searchText = ref('');
+    const statusFilter = ref('all');
+
+    const onSearchInput = function(e) { searchText.value = e.target.value; };
+    const onStatusChange = function(e) { statusFilter.value = e.target.value; };
+    const clearSearch = function() { searchText.value = ''; };
+    const clearStatus = function() { statusFilter.value = 'all'; };
+    const resetFilters = function() { searchText.value = ''; statusFilter.value = 'all'; };
+
+    // Hover/active state
     const hoverState = ref({});
     const activeState = ref({});
 
-    const setHover = (id, btn, val) => {
-      hoverState.value = { ...hoverState.value, [id + '-' + btn]: val };
+    const setHover = function(id, btn, val) {
+      hoverState.value = Object.assign({}, hoverState.value, { [id + '-' + btn]: val });
     };
 
-    const setActive = (id, btn, val) => {
-      activeState.value = { ...activeState.value, [id + '-' + btn]: val };
+    const setActive = function(id, btn, val) {
+      activeState.value = Object.assign({}, activeState.value, { [id + '-' + btn]: val });
     };
 
-    const darken = (hex, amount) => {
+    const darken = function(hex, amount) {
       const h = (hex || '#2d6a4f').replace('#', '');
-      const num = parseInt(h.length === 3 ? h[0]+h[0]+h[1]+h[1]+h[2]+h[2] : h, 16);
+      const full = h.length === 3 ? h[0]+h[0]+h[1]+h[1]+h[2]+h[2] : h;
+      const num = parseInt(full, 16);
       const r = Math.max(0, (num >> 16) - amount);
       const g = Math.max(0, ((num >> 8) & 0xff) - amount);
       const b = Math.max(0, (num & 0xff) - amount);
       return '#' + [r, g, b].map(function(v) { return v.toString(16).padStart(2, '0'); }).join('');
     };
 
-    const getMimeBadges = (patterns) => {
-      if (!Array.isArray(patterns) || !patterns.length) return [];
+    const getMimeBadges = function(patterns) {
+      if (!patterns || !Array.isArray(patterns) || !patterns.length) return [];
       const badges = [];
+      const seen = {};
       patterns.forEach(function(p) {
-        const val = (p && (p.value || p)) || '';
-        if (val === 'application/pdf') badges.push('PDF');
-        else if (val === 'image/*') badges.push('Images');
-        else if (val === 'application/*') badges.push('Office');
+        let val = '';
+        if (p && typeof p === 'object') {
+          val = p.value || '';
+        } else if (typeof p === 'string') {
+          val = p;
+        }
+        if (val === 'application/pdf' && !seen['PDF']) { badges.push('PDF'); seen['PDF'] = true; }
+        else if (val === 'image/*' && !seen['Images']) { badges.push('Images'); seen['Images'] = true; }
+        else if (val === 'application/*' && !seen['Office']) { badges.push('Office'); seen['Office'] = true; }
       });
       return badges;
     };
 
-    const formatExpiry = (val) => {
+    const formatExpiry = function(val) {
       if (!val) return 'mm/dd/yyyy';
       try {
         const d = new Date(val);
@@ -226,132 +280,157 @@ export default {
         const dd = String(d.getDate()).padStart(2, '0');
         const yyyy = d.getFullYear();
         return mm + '/' + dd + '/' + yyyy;
-      } catch (e) {
-        return 'mm/dd/yyyy';
-      }
+      } catch(e) { return 'mm/dd/yyyy'; }
     };
 
-    const formatMaxBytes = (bytes) => {
+    const formatMaxBytes = function(bytes) {
       if (!bytes && bytes !== 0) return '—';
       return Math.round(bytes / (1024 * 1024)) + ' MB';
     };
 
-    const processedItems = computed(() => {
-      const items = props.content?.data || [];
-      const { resolveMappingFormula } = wwLib.wwFormula.useFormula();
+    // Processed items
+    const processedItems = computed(function() {
+      const items = props.content && props.content.data || [];
+      const formulaObj = wwLib.wwFormula.useFormula();
+      const resolveMappingFormula = formulaObj.resolveMappingFormula;
 
       return items.map(function(item) {
-        const id = resolveMappingFormula(props.content?.dataIdFormula, item) ?? item?.id;
-        const name = resolveMappingFormula(props.content?.dataNameFormula, item) ?? item?.name;
-        const folder_name = resolveMappingFormula(props.content?.dataFolderNameFormula, item) ?? item?.folder_name;
-        const is_enabled = resolveMappingFormula(props.content?.dataIsEnabledFormula, item) ?? item?.is_enabled;
-        const allowed_mime_patterns = resolveMappingFormula(props.content?.dataAllowedMimeFormula, item) ?? item?.allowed_mime_patterns;
-        const max_bytes = resolveMappingFormula(props.content?.dataMaxBytesFormula, item) ?? item?.max_bytes;
-        const instructions = resolveMappingFormula(props.content?.dataInstructionsFormula, item) ?? item?.instructions;
-        const expires_at = resolveMappingFormula(props.content?.dataExpiresAtFormula, item) ?? item?.expires_at;
-        const captcha_required = resolveMappingFormula(props.content?.dataCaptchaRequiredFormula, item) ?? item?.captcha_required;
+        const id = resolveMappingFormula(props.content && props.content.dataIdFormula, item) || item && item.id;
+        const name = resolveMappingFormula(props.content && props.content.dataNameFormula, item) || item && item.name;
+        const folder_name = resolveMappingFormula(props.content && props.content.dataFolderNameFormula, item) || item && item.folder_name;
+        const is_enabled = resolveMappingFormula(props.content && props.content.dataIsEnabledFormula, item);
+        const is_enabled_val = is_enabled !== null && is_enabled !== undefined ? is_enabled : (item && item.is_enabled);
+        const allowed_mime_patterns = resolveMappingFormula(props.content && props.content.dataAllowedMimeFormula, item) || item && item.allowed_mime_patterns || [];
+        const max_bytes = resolveMappingFormula(props.content && props.content.dataMaxBytesFormula, item) || item && item.max_bytes;
+        const instructions = resolveMappingFormula(props.content && props.content.dataInstructionsFormula, item) || item && item.instructions || '';
+        const expires_at = resolveMappingFormula(props.content && props.content.dataExpiresAtFormula, item) || item && item.expires_at;
+        const captcha_required = resolveMappingFormula(props.content && props.content.dataCaptchaRequiredFormula, item);
+        const captcha_val = captcha_required !== null && captcha_required !== undefined ? captcha_required : (item && item.captcha_required);
 
         return {
-          ...item,
-          id: id ?? 'item-' + Math.random(),
-          name: name ?? 'Untitled',
-          folder_name: folder_name ?? '',
-          is_enabled: Boolean(is_enabled),
-          allowed_mime_patterns: allowed_mime_patterns ?? [],
-          max_bytes: max_bytes ?? 0,
-          instructions: instructions ?? '',
-          expires_at: expires_at ?? null,
-          captcha_required: Boolean(captcha_required),
-          fileBadges: getMimeBadges(allowed_mime_patterns ?? item?.allowed_mime_patterns ?? []),
-          maxSizeDisplay: formatMaxBytes(max_bytes ?? item?.max_bytes),
-          expiryDisplay: formatExpiry(expires_at ?? item?.expires_at),
+          id: id || ('item-' + Math.random()),
+          name: name || 'Untitled',
+          folder_name: folder_name || '',
+          is_enabled: Boolean(is_enabled_val),
+          allowed_mime_patterns: allowed_mime_patterns,
+          max_bytes: max_bytes || 0,
+          instructions: instructions,
+          expires_at: expires_at || null,
+          captcha_required: Boolean(captcha_val),
+          fileBadges: getMimeBadges(allowed_mime_patterns),
+          maxSizeDisplay: formatMaxBytes(max_bytes || item && item.max_bytes),
+          expiryDisplay: formatExpiry(expires_at || item && item.expires_at),
           _original: item,
         };
       });
     });
 
-    watch(processedItems, function(items) { setItemCount(items?.length ?? 0); }, { immediate: true });
+    // Filtered items
+    const filteredItems = computed(function() {
+      const items = processedItems.value;
+      const search = (searchText.value || '').toLowerCase();
+      const status = statusFilter.value;
 
-    const resolvedPrimaryColor = computed(() => props.content?.primaryColor || '#2d6a4f');
-    const resolvedOutlineColor = computed(() => props.content?.outlineColor || '#2d6a4f');
+      return items.filter(function(item) {
+        const nameMatch = !search || (item.name || '').toLowerCase().indexOf(search) !== -1;
+        const statusMatch = status === 'all' ||
+          (status === 'enabled' && item.is_enabled) ||
+          (status === 'disabled' && !item.is_enabled);
+        return nameMatch && statusMatch;
+      });
+    });
 
-    const containerStyle = computed(() => ({
-      '--pp-primary': resolvedPrimaryColor.value,
-      '--pp-outline': resolvedOutlineColor.value,
-      '--pp-card-bg': props.content?.cardBackground || '#ffffff',
-      '--pp-card-border': props.content?.cardBorderColor || '#e5e7eb',
-      '--pp-card-radius': (props.content?.cardBorderRadius ?? 8) + 'px',
-      '--pp-label-color': props.content?.labelTextColor || '#6b7280',
-      '--pp-value-color': props.content?.valueTextColor || '#111827',
-      '--pp-gap': (props.content?.cardGap ?? 12) + 'px',
-      '--pp-font-size': (props.content?.fontSize ?? 14) + 'px',
-      display: 'flex',
-      flexDirection: 'column',
-      gap: (props.content?.cardGap ?? 12) + 'px',
-      width: '100%',
-    }));
+    watch(processedItems, function(items) { setItemCount(items.length || 0); }, { immediate: true });
+    watch(filteredItems, function(items) { setFilteredCount(items.length || 0); }, { immediate: true });
 
-    const cardStyle = computed(() => ({
-      background: props.content?.cardBackground || '#ffffff',
-      border: '1px solid ' + (props.content?.cardBorderColor || '#e5e7eb'),
-      borderRadius: (props.content?.cardBorderRadius ?? 8) + 'px',
-      fontSize: (props.content?.fontSize ?? 14) + 'px',
-    }));
+    // Resolved colours
+    const resolvedPrimaryColor = computed(function() { return (props.content && props.content.primaryColor) || '#2d6a4f'; });
+    const resolvedOutlineColor = computed(function() { return (props.content && props.content.outlineColor) || '#2d6a4f'; });
 
-    const labelStyle = computed(() => ({
-      color: props.content?.labelTextColor || '#6b7280',
-      fontSize: (props.content?.fontSize ?? 14) + 'px',
-    }));
+    // Styles
+    const containerStyle = computed(function() {
+      return {
+        '--pp-primary': resolvedPrimaryColor.value,
+        '--pp-outline': resolvedOutlineColor.value,
+        '--pp-card-bg': (props.content && props.content.cardBackground) || '#ffffff',
+        '--pp-card-border': (props.content && props.content.cardBorderColor) || '#e5e7eb',
+        '--pp-card-radius': ((props.content && props.content.cardBorderRadius) || 8) + 'px',
+        '--pp-label-color': (props.content && props.content.labelTextColor) || '#6b7280',
+        '--pp-value-color': (props.content && props.content.valueTextColor) || '#111827',
+        '--pp-gap': ((props.content && props.content.cardGap) || 16) + 'px',
+        '--pp-font-size': ((props.content && props.content.fontSize) || 14) + 'px',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: ((props.content && props.content.cardGap) || 16) + 'px',
+        width: '100%',
+      };
+    });
 
-    const valueStyle = computed(() => ({
-      color: props.content?.valueTextColor || '#111827',
-      fontSize: (props.content?.fontSize ?? 14) + 'px',
-    }));
+    const cardStyle = computed(function() {
+      return {
+        background: (props.content && props.content.cardBackground) || '#ffffff',
+        border: '1px solid ' + ((props.content && props.content.cardBorderColor) || '#e5e7eb'),
+        borderRadius: ((props.content && props.content.cardBorderRadius) || 8) + 'px',
+        fontSize: ((props.content && props.content.fontSize) || 14) + 'px',
+      };
+    });
 
-    const activeBadgeStyle = computed(() => ({
-      backgroundColor: '#d1fae5',
-      color: '#065f46',
-      fontSize: (props.content?.fontSize ?? 14) + 'px',
-    }));
+    const labelStyle = computed(function() {
+      return {
+        color: (props.content && props.content.labelTextColor) || '#6b7280',
+        fontSize: ((props.content && props.content.fontSize) || 14) + 'px',
+      };
+    });
 
-    const inactiveBadgeStyle = computed(() => ({
-      backgroundColor: '#f3f4f6',
-      color: '#6b7280',
-      fontSize: (props.content?.fontSize ?? 14) + 'px',
-    }));
+    const valueStyle = computed(function() {
+      return {
+        color: (props.content && props.content.valueTextColor) || '#111827',
+        fontSize: ((props.content && props.content.fontSize) || 14) + 'px',
+      };
+    });
 
-    const fileBadgeStyle = computed(() => ({
-      backgroundColor: resolvedPrimaryColor.value,
-      color: '#ffffff',
-      fontSize: ((props.content?.fontSize ?? 14) - 1) + 'px',
-    }));
+    const activeBadgeStyle = computed(function() {
+      return { backgroundColor: '#d1fae5', color: '#065f46', fontSize: ((props.content && props.content.fontSize) || 14) + 'px' };
+    });
 
-    const checkedBoxStyle = computed(() => ({
-      backgroundColor: resolvedPrimaryColor.value,
-      borderColor: resolvedPrimaryColor.value,
-    }));
+    const inactiveBadgeStyle = computed(function() {
+      return { backgroundColor: '#f3f4f6', color: '#6b7280', fontSize: ((props.content && props.content.fontSize) || 14) + 'px' };
+    });
 
-    const uncheckedBoxStyle = computed(() => ({
-      backgroundColor: '#ffffff',
-      borderColor: '#d1d5db',
-    }));
+    const fileBadgeStyle = computed(function() {
+      return {
+        backgroundColor: resolvedPrimaryColor.value,
+        color: '#ffffff',
+        fontSize: (((props.content && props.content.fontSize) || 14) - 1) + 'px',
+      };
+    });
 
-    const emptyStateStyle = computed(() => ({
-      color: props.content?.labelTextColor || '#6b7280',
-      fontSize: (props.content?.fontSize ?? 14) + 'px',
-    }));
+    const checkedBoxStyle = computed(function() {
+      return { backgroundColor: resolvedPrimaryColor.value, borderColor: resolvedPrimaryColor.value };
+    });
+
+    const uncheckedBoxStyle = computed(function() {
+      return { backgroundColor: '#ffffff', borderColor: '#d1d5db' };
+    });
+
+    const emptyStateStyle = computed(function() {
+      return {
+        color: (props.content && props.content.labelTextColor) || '#6b7280',
+        fontSize: ((props.content && props.content.fontSize) || 14) + 'px',
+      };
+    });
 
     const getEditButtonStyle = function(id) {
       const isActive = activeState.value[id + '-edit'];
       const isHovered = hoverState.value[id + '-edit'];
       const base = resolvedOutlineColor.value;
-      const darkened = isActive ? darken(base, 40) : isHovered ? darken(base, 20) : base;
+      const darkened = isActive ? darken(base, 40) : (isHovered ? darken(base, 20) : base);
       return {
         backgroundColor: isHovered ? darkened : '#ffffff',
         color: isHovered ? '#ffffff' : base,
         borderColor: darkened,
-        fontSize: (props.content?.fontSize ?? 14) + 'px',
-        boxShadow: isHovered && !isActive ? '0 2px 6px rgba(0,0,0,0.18)' : 'none',
+        fontSize: ((props.content && props.content.fontSize) || 14) + 'px',
+        boxShadow: (isHovered && !isActive) ? '0 2px 8px rgba(0,0,0,0.15)' : 'none',
         transform: isActive ? 'scale(0.97)' : 'scale(1)',
         transition: 'background-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease, transform 0.1s ease',
       };
@@ -361,13 +440,13 @@ export default {
       const isActive = activeState.value[id + '-instructions'];
       const isHovered = hoverState.value[id + '-instructions'];
       const base = resolvedOutlineColor.value;
-      const darkened = isActive ? darken(base, 40) : isHovered ? darken(base, 20) : base;
+      const darkened = isActive ? darken(base, 40) : (isHovered ? darken(base, 20) : base);
       return {
         backgroundColor: isHovered ? darkened : '#ffffff',
         color: isHovered ? '#ffffff' : base,
         borderColor: darkened,
-        fontSize: ((props.content?.fontSize ?? 14) - 1) + 'px',
-        boxShadow: isHovered && !isActive ? '0 2px 6px rgba(0,0,0,0.18)' : 'none',
+        fontSize: (((props.content && props.content.fontSize) || 14) - 1) + 'px',
+        boxShadow: (isHovered && !isActive) ? '0 2px 8px rgba(0,0,0,0.15)' : 'none',
         transform: isActive ? 'scale(0.97)' : 'scale(1)',
         transition: 'background-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease, transform 0.1s ease',
       };
@@ -379,40 +458,48 @@ export default {
       const base = resolvedOutlineColor.value;
       return {
         color: isHovered ? darken(base, 20) : base,
-        backgroundColor: isHovered ? (isActive ? '#f3f4f6' : '#f9fafb') : 'transparent',
-        borderColor: 'transparent',
-        fontSize: (props.content?.fontSize ?? 14) + 'px',
+        backgroundColor: isHovered ? (isActive ? '#e5e7eb' : '#f3f4f6') : 'transparent',
         transform: isActive ? 'scale(0.95)' : 'scale(1)',
         transition: 'color 0.15s ease, background-color 0.15s ease, transform 0.1s ease',
       };
     };
 
+    // Handlers
     const handleEdit = function(item) {
-      const payload = item?._original ?? item;
+      const payload = item._original || item;
       setSelectedItem(payload);
       emit('trigger-event', { name: 'edit-click', event: { page: payload } });
     };
 
     const handleInstructions = function(item) {
-      const payload = item?._original ?? item;
+      const payload = item._original || item;
       setSelectedItem(payload);
       emit('trigger-event', { name: 'instructions-click', event: { page: payload } });
     };
 
     const handleShare = function(item) {
-      const payload = item?._original ?? item;
+      const payload = item._original || item;
       setSelectedItem(payload);
       emit('trigger-event', { name: 'share-click', event: { page: payload } });
     };
 
     const handleLink = function(item) {
-      const payload = item?._original ?? item;
+      const payload = item._original || item;
       setSelectedItem(payload);
       emit('trigger-event', { name: 'link-click', event: { page: payload } });
     };
 
     return {
+      props,
       processedItems,
+      filteredItems,
+      searchText,
+      statusFilter,
+      onSearchInput,
+      onStatusChange,
+      clearSearch,
+      clearStatus,
+      resetFilters,
       containerStyle,
       cardStyle,
       labelStyle,
@@ -434,6 +521,7 @@ export default {
       setActive,
       selectedItem,
       itemCount,
+      filteredCount,
       /* wwEditor:start */
       isEditing,
       /* wwEditor:end */
@@ -448,40 +536,164 @@ export default {
   box-sizing: border-box;
 }
 
-.pp-card {
-  width: 100%;
-  box-sizing: border-box;
-  padding: 16px;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  background: var(--pp-card-bg, #ffffff);
-  border: 1px solid var(--pp-card-border, #e5e7eb);
-  border-radius: var(--pp-card-radius, 8px);
-  font-size: var(--pp-font-size, 14px);
-}
-
-.card-actions {
+/* Filter Bar */
+.filter-bar {
   display: flex;
   flex-direction: row;
   align-items: center;
   gap: 8px;
+  margin-bottom: 4px;
+  width: 100%;
 }
 
-.card-actions-bottom {
-  border-top: 1px solid var(--pp-card-border, #e5e7eb);
-  padding-top: 10px;
-  margin-top: 2px;
+.filter-search-wrap {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
 }
 
-.btn-action {
+.filter-search-icon {
+  position: absolute;
+  left: 10px;
+  pointer-events: none;
+  flex-shrink: 0;
+}
+
+.filter-search {
+  width: 100%;
+  padding: 7px 28px 7px 30px;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  font-size: 13px;
+  color: #111827;
+  background: #ffffff;
+  outline: none;
+  box-sizing: border-box;
+}
+
+.filter-search:focus {
+  border-color: #2d6a4f;
+}
+
+.filter-clear-btn {
+  position: absolute;
+  right: 8px;
+  background: none;
+  border: none;
+  padding: 2px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+}
+
+.filter-clear-btn:hover {
+  background: #f3f4f6;
+}
+
+.filter-select-wrap {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+}
+
+.filter-select {
+  width: 100%;
+  padding: 7px 28px 7px 10px;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  font-size: 13px;
+  color: #111827;
+  background: #ffffff;
+  outline: none;
+  appearance: none;
+  box-sizing: border-box;
+  cursor: pointer;
+}
+
+.filter-select:focus {
+  border-color: #2d6a4f;
+}
+
+.filter-clear-select {
+  right: 20px;
+}
+
+.filter-reset {
+  background: none;
+  border: none;
+  color: #2d6a4f;
+  font-size: 13px;
+  font-weight: 500;
+  text-decoration: underline;
+  cursor: pointer;
+  white-space: nowrap;
+  padding: 0 2px;
+  flex-shrink: 0;
+}
+
+.filter-reset:hover {
+  color: #1a4a35;
+}
+
+/* Card */
+.pp-card {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  background: var(--pp-card-bg, #ffffff);
+  border: 1px solid var(--pp-card-border, #e5e7eb);
+  border-radius: var(--pp-card-radius, 8px);
+  font-size: var(--pp-font-size, 14px);
+  overflow: hidden;
+}
+
+/* Action row */
+.card-actions {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px 10px 16px;
+  border-bottom: 1px solid var(--pp-card-border, #e5e7eb);
+}
+
+.read-only-hint {
+  font-size: 11px;
+  color: #9ca3af;
+  font-style: italic;
+}
+
+/* Buttons */
+.btn-primary {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 4px;
-  padding: 5px 14px;
+  padding: 6px 20px;
   border-radius: 999px;
   font-size: var(--pp-font-size, 14px);
+  font-weight: 600;
+  line-height: 1.4;
+  white-space: nowrap;
+  cursor: pointer;
+  user-select: none;
+  border: 2px solid;
+}
+
+.btn-outline-sm {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px 12px;
+  border-radius: 999px;
   font-weight: 500;
   line-height: 1.4;
   white-space: nowrap;
@@ -490,38 +702,40 @@ export default {
   border: 1.5px solid;
 }
 
-.btn-icon {
-  padding: 5px 12px;
-  border-radius: 6px;
-  font-size: var(--pp-font-size, 14px);
+/* Read-only fields */
+.readonly-field {
+  background: #f9fafb;
 }
 
+.readonly-field:last-of-type {
+  border-bottom: none;
+}
+
+/* Field rows */
 .card-field {
   display: flex;
   flex-direction: row;
   align-items: center;
   justify-content: space-between;
   gap: 8px;
-  min-height: 22px;
-}
-
-.card-field-column {
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 2px;
+  min-height: 36px;
+  padding: 6px 16px;
+  border-bottom: 1px solid var(--pp-card-border, #e5e7eb);
 }
 
 .field-label {
   color: var(--pp-label-color, #6b7280);
-  font-size: var(--pp-font-size, 14px);
-  font-weight: 400;
+  font-size: calc(var(--pp-font-size, 14px) - 1px);
+  font-weight: 600;
   flex-shrink: 0;
+  text-transform: none;
+  letter-spacing: 0;
 }
 
 .field-value {
   color: var(--pp-value-color, #111827);
   font-size: var(--pp-font-size, 14px);
-  font-weight: 500;
+  font-weight: 400;
   text-align: right;
   display: flex;
   align-items: center;
@@ -530,16 +744,22 @@ export default {
   justify-content: flex-end;
 }
 
-.page-name-value {
-  color: var(--pp-value-color, #111827);
-  font-weight: 600;
-  text-align: left;
+.field-value-right {
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 1px;
+}
+
+.page-name-text {
+  font-weight: 500;
+  text-align: right;
 }
 
 .folder-name-sub {
-  font-size: calc(var(--pp-font-size, 14px) - 1px);
+  font-size: calc(var(--pp-font-size, 14px) - 2px);
   font-style: italic;
   color: var(--pp-label-color, #6b7280);
+  text-align: right;
 }
 
 .status-badge {
@@ -588,6 +808,31 @@ export default {
   user-select: none;
 }
 
+/* Share + Link row */
+.card-actions-bottom {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px 10px 16px;
+  border-top: 1px solid var(--pp-card-border, #e5e7eb);
+}
+
+.btn-icon-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 12px;
+  border-radius: 6px;
+  font-size: var(--pp-font-size, 14px);
+  font-weight: 500;
+  cursor: pointer;
+  user-select: none;
+  border: none;
+  background: transparent;
+}
+
+/* Empty state */
 .empty-state {
   width: 100%;
   padding: 32px 16px;
