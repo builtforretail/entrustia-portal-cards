@@ -18,14 +18,11 @@ export default {
           folder_name: 'Bills',
           name: 'Bills Intake v11',
           instructions: '<p>Only Bills files v11</p>',
-          allowed_mime_patterns: [
-            { label: 'PDF', value: 'application/pdf' },
-            { label: 'Images', value: 'image/*' },
-          ],
+          allowed_mime_patterns: ['application/pdf', 'image/*', 'application/*'],
           max_bytes: 11534336,
-          expires_at: '2026-03-08T00:00:00.000Z',
+          expires_at: '2026-03-08',
           captcha_required: true,
-          notify_emails: '',
+          notify_emails: [],
           token: 'abc123',
           is_enabled: true,
           created_at: 1700000000000,
@@ -37,15 +34,29 @@ export default {
           folder_name: 'City Services',
           name: 'City Services',
           instructions: '',
-          allowed_mime_patterns: [
-            { label: 'PDF', value: 'application/pdf' },
-          ],
+          allowed_mime_patterns: ['application/pdf'],
           max_bytes: 10485760,
           expires_at: null,
           captcha_required: true,
-          notify_emails: '',
+          notify_emails: [],
           token: 'def456',
           is_enabled: true,
+          created_at: 1700000000000,
+        },
+        {
+          id: 3,
+          tenant_id: 1,
+          folder_id: 3,
+          folder_name: 'Archive',
+          name: 'Archive Intake',
+          instructions: '',
+          allowed_mime_patterns: ['application/pdf', 'image/*'],
+          max_bytes: 5242880,
+          expires_at: '2026-01-15',
+          captcha_required: false,
+          notify_emails: [],
+          token: 'ghi789',
+          is_enabled: false,
           created_at: 1700000000000,
         },
       ],
@@ -67,7 +78,7 @@ export default {
             max_bytes: 0,
             expires_at: null,
             captcha_required: false,
-            notify_emails: '',
+            notify_emails: [],
             token: '',
             is_enabled: false,
             created_at: 0,
@@ -84,7 +95,7 @@ export default {
               max_bytes: { label: { en: 'Max Bytes' }, type: 'Number' },
               expires_at: { label: { en: 'Expires At' }, type: 'Text' },
               captcha_required: { label: { en: 'Captcha Required' }, type: 'OnOff' },
-              notify_emails: { label: { en: 'Notify Emails' }, type: 'Text' },
+              notify_emails: { label: { en: 'Notify Emails' }, type: 'Array' },
               token: { label: { en: 'Token' }, type: 'Text' },
               is_enabled: { label: { en: 'Is Enabled' }, type: 'OnOff' },
               created_at: { label: { en: 'Created At' }, type: 'Number' },
@@ -109,7 +120,7 @@ export default {
       }),
       defaultValue: { type: 'f', code: "context.mapping?.['id']" },
       hidden: (content, sidepanelContent, boundProps) =>
-        !Array.isArray(content.data) || !content.data?.length || !boundProps.data,
+        !Array.isArray(content.data) || !content.data.length || !boundProps.data,
     },
 
     dataNameFormula: {
@@ -121,7 +132,7 @@ export default {
       }),
       defaultValue: { type: 'f', code: "context.mapping?.['name']" },
       hidden: (content, sidepanelContent, boundProps) =>
-        !Array.isArray(content.data) || !content.data?.length || !boundProps.data,
+        !Array.isArray(content.data) || !content.data.length || !boundProps.data,
     },
 
     dataFolderNameFormula: {
@@ -133,7 +144,7 @@ export default {
       }),
       defaultValue: { type: 'f', code: "context.mapping?.['folder_name']" },
       hidden: (content, sidepanelContent, boundProps) =>
-        !Array.isArray(content.data) || !content.data?.length || !boundProps.data,
+        !Array.isArray(content.data) || !content.data.length || !boundProps.data,
     },
 
     dataIsEnabledFormula: {
@@ -145,7 +156,7 @@ export default {
       }),
       defaultValue: { type: 'f', code: "context.mapping?.['is_enabled']" },
       hidden: (content, sidepanelContent, boundProps) =>
-        !Array.isArray(content.data) || !content.data?.length || !boundProps.data,
+        !Array.isArray(content.data) || !content.data.length || !boundProps.data,
     },
 
     dataAllowedMimeFormula: {
@@ -157,7 +168,7 @@ export default {
       }),
       defaultValue: { type: 'f', code: "context.mapping?.['allowed_mime_patterns']" },
       hidden: (content, sidepanelContent, boundProps) =>
-        !Array.isArray(content.data) || !content.data?.length || !boundProps.data,
+        !Array.isArray(content.data) || !content.data.length || !boundProps.data,
     },
 
     dataMaxBytesFormula: {
@@ -169,7 +180,7 @@ export default {
       }),
       defaultValue: { type: 'f', code: "context.mapping?.['max_bytes']" },
       hidden: (content, sidepanelContent, boundProps) =>
-        !Array.isArray(content.data) || !content.data?.length || !boundProps.data,
+        !Array.isArray(content.data) || !content.data.length || !boundProps.data,
     },
 
     dataInstructionsFormula: {
@@ -181,7 +192,7 @@ export default {
       }),
       defaultValue: { type: 'f', code: "context.mapping?.['instructions']" },
       hidden: (content, sidepanelContent, boundProps) =>
-        !Array.isArray(content.data) || !content.data?.length || !boundProps.data,
+        !Array.isArray(content.data) || !content.data.length || !boundProps.data,
     },
 
     dataExpiresAtFormula: {
@@ -193,7 +204,7 @@ export default {
       }),
       defaultValue: { type: 'f', code: "context.mapping?.['expires_at']" },
       hidden: (content, sidepanelContent, boundProps) =>
-        !Array.isArray(content.data) || !content.data?.length || !boundProps.data,
+        !Array.isArray(content.data) || !content.data.length || !boundProps.data,
     },
 
     dataCaptchaRequiredFormula: {
@@ -205,7 +216,7 @@ export default {
       }),
       defaultValue: { type: 'f', code: "context.mapping?.['captcha_required']" },
       hidden: (content, sidepanelContent, boundProps) =>
-        !Array.isArray(content.data) || !content.data?.length || !boundProps.data,
+        !Array.isArray(content.data) || !content.data.length || !boundProps.data,
     },
 
     primaryColor: {
@@ -215,12 +226,12 @@ export default {
       defaultValue: '#2d6a4f',
       bindable: true,
       /* wwEditor:start */
-      bindingValidation: { type: 'string', tooltip: 'CSS color value for filled buttons and active badge' },
+      bindingValidation: { type: 'string', tooltip: 'CSS color for filled elements' },
       /* wwEditor:end */
     },
 
     outlineColor: {
-      label: { en: 'Outline Color (Edit Button)' },
+      label: { en: 'Outline Color' },
       type: 'Color',
       section: 'style',
       defaultValue: '#2d6a4f',
@@ -295,7 +306,7 @@ export default {
       min: 0,
       max: 64,
       step: 1,
-      defaultValue: 12,
+      defaultValue: 16,
       bindable: true,
       /* wwEditor:start */
       bindingValidation: { type: 'number', tooltip: 'Vertical gap between cards in pixels' },
