@@ -1,128 +1,159 @@
 <template>
-  <div class="portal-cards-root">
-
-    <!-- Filter Bar -->
-    <div class="filter-bar">
-      <div class="filter-search-wrap">
-        <svg class="search-icon" xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#888" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
-        </svg>
-        <input
-          class="filter-input"
-          type="text"
-          placeholder="Page Name"
-          :value="searchText"
-          @input="searchText = $event.target.value"
-        />
-        <button v-if="searchText" class="clear-btn" @click="searchText = ''" aria-label="Clear search">&#x2715;</button>
-      </div>
-
-      <div class="filter-select-wrap">
-        <select class="filter-select" :value="statusFilter" @change="statusFilter = $event.target.value">
-          <option value="all">All</option>
-          <option value="active">Active</option>
-          <option value="inactive">Inactive</option>
-        </select>
-        <button v-if="statusFilter !== 'all'" class="clear-btn clear-btn-select" @click="statusFilter = 'all'" aria-label="Clear filter">&#x2715;</button>
-      </div>
-
-      <button class="reset-link" @click="resetFilters">Reset</button>
-    </div>
-
-    <!-- Cards -->
-    <div v-if="filteredItems.length === 0" class="empty-state">No results found.</div>
-
+  <div class="pp-card-list" :style="containerStyle">
     <div
-      v-for="item in filteredItems"
+      v-for="item in processedItems"
       :key="item.id"
-      class="portal-card"
+      class="pp-card"
+      :style="cardStyle"
     >
-      <!-- Action Buttons -->
+      <!-- Action Row -->
       <div class="card-actions">
         <button
-          class="btn-open"
-          :style="getOpenButtonStyle(item.id)"
-          @mouseenter="setHover('open', item.id, true)"
-          @mouseleave="setHover('open', item.id, false)"
-          @mousedown="setActive('open', item.id, true)"
-          @mouseup="setActive('open', item.id, false)"
-          @click="handleOpen(item)"
-        >Open</button>
-        <button
-          class="btn-edit"
+          class="btn-action btn-edit"
           :style="getEditButtonStyle(item.id)"
-          @mouseenter="setHover('edit', item.id, true)"
-          @mouseleave="setHover('edit', item.id, false)"
-          @mousedown="setActive('edit', item.id, true)"
-          @mouseup="setActive('edit', item.id, false)"
+          type="button"
           @click="handleEdit(item)"
-        >Edit</button>
+          @mouseenter="setHover(item.id, 'edit', true)"
+          @mouseleave="setHover(item.id, 'edit', false)"
+          @mousedown="setActive(item.id, 'edit', true)"
+          @mouseup="setActive(item.id, 'edit', false)"
+        >
+          Edit
+        </button>
       </div>
 
-      <!-- Active Status -->
-      <div class="card-row">
-        <span class="card-label">Active</span>
-        <span :class="item.is_enabled ? 'badge-active' : 'badge-inactive'">
-          {{ item.is_enabled ? 'Active' : 'Inactive' }}
+      <!-- Active -->
+      <div class="card-field">
+        <span class="field-label" :style="labelStyle">Active</span>
+        <span class="field-value">
+          <span
+            class="status-badge"
+            :style="item.is_enabled ? activeBadgeStyle : inactiveBadgeStyle"
+          >
+            {{ item.is_enabled ? 'Active' : 'Inactive' }}
+          </span>
         </span>
       </div>
 
-      <!-- Page Name -->
-      <div class="card-row">
-        <span class="card-label">Page Name</span>
-        <span class="card-value card-value-link" @click="handleNameClick(item)">{{ item.name || '' }}</span>
+      <!-- Page Name + Folder Name -->
+      <div class="card-field card-field-column">
+        <span class="field-label" :style="labelStyle">Page Name</span>
+        <span class="field-value page-name-value" :style="valueStyle">{{ item.name }}</span>
+        <span class="folder-name-sub" :style="labelStyle">Folder Name: {{ item.folder_name }}</span>
       </div>
 
       <!-- File Types -->
-      <div class="card-row card-row-wrap">
-        <span class="card-label">File Types</span>
-        <span class="badge-wrap">
+      <div class="card-field">
+        <span class="field-label" :style="labelStyle">File Types</span>
+        <span class="field-value file-types-value">
           <span
             v-for="badge in item.fileBadges"
             :key="badge"
             class="file-badge"
+            :style="fileBadgeStyle"
           >{{ badge }}</span>
-          <span v-if="!item.fileBadges || item.fileBadges.length === 0" class="card-value">&#8212;</span>
+          <span v-if="!item.fileBadges.length" :style="valueStyle">—</span>
         </span>
       </div>
 
       <!-- Max Size -->
-      <div class="card-row">
-        <span class="card-label">Max Size</span>
-        <span class="card-value">{{ item.maxSizeDisplay }}</span>
+      <div class="card-field">
+        <span class="field-label" :style="labelStyle">Max Size</span>
+        <span class="field-value" :style="valueStyle">{{ item.maxSizeDisplay }}</span>
       </div>
 
       <!-- Page Instructions -->
-      <div class="card-row">
-        <span class="card-label">Page Instructions</span>
-        <span class="card-value">{{ item.instructions || '&#8212;' }}</span>
+      <div class="card-field">
+        <span class="field-label" :style="labelStyle">Page Instructions</span>
+        <span class="field-value">
+          <button
+            class="btn-action btn-instructions"
+            :style="getInstructionsButtonStyle(item.id)"
+            type="button"
+            @click="handleInstructions(item)"
+            @mouseenter="setHover(item.id, 'instructions', true)"
+            @mouseleave="setHover(item.id, 'instructions', false)"
+            @mousedown="setActive(item.id, 'instructions', true)"
+            @mouseup="setActive(item.id, 'instructions', false)"
+          >
+            Click to Edit
+          </button>
+        </span>
       </div>
 
       <!-- Expiry Date -->
-      <div class="card-row">
-        <span class="card-label">Expiry Date</span>
-        <span class="card-value">{{ item.expiryDisplay }}</span>
+      <div class="card-field">
+        <span class="field-label" :style="labelStyle">Expiry Date</span>
+        <span class="field-value" :style="valueStyle">{{ item.expiryDisplay }}</span>
       </div>
 
       <!-- Captcha -->
-      <div class="card-row">
-        <span class="card-label">Captcha?</span>
-        <span class="card-value">
-          <svg v-if="item.captcha_required" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#2d6a4f" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-            <polyline points="20 6 9 17 4 12"/>
-          </svg>
-          <span v-else>&#8212;</span>
+      <div class="card-field">
+        <span class="field-label" :style="labelStyle">Captcha?</span>
+        <span class="field-value checkbox-value">
+          <span
+            class="checkbox-box"
+            :style="item.captcha_required ? checkedBoxStyle : uncheckedBoxStyle"
+            aria-hidden="true"
+          >
+            <svg v-if="item.captcha_required" width="10" height="8" viewBox="0 0 10 8" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M1 4L3.5 6.5L9 1" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </span>
         </span>
+      </div>
+
+      <!-- Share + Link -->
+      <div class="card-actions card-actions-bottom">
+        <button
+          class="btn-action btn-icon"
+          :style="getIconButtonStyle(item.id, 'share')"
+          type="button"
+          title="Share"
+          @click="handleShare(item)"
+          @mouseenter="setHover(item.id, 'share', true)"
+          @mouseleave="setHover(item.id, 'share', false)"
+          @mousedown="setActive(item.id, 'share', true)"
+          @mouseup="setActive(item.id, 'share', false)"
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8M16 6l-4-4-4 4M12 2v13" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          Share
+        </button>
+        <button
+          class="btn-action btn-icon"
+          :style="getIconButtonStyle(item.id, 'link')"
+          type="button"
+          title="Copy Link"
+          @click="handleLink(item)"
+          @mouseenter="setHover(item.id, 'link', true)"
+          @mouseleave="setHover(item.id, 'link', false)"
+          @mousedown="setActive(item.id, 'link', true)"
+          @mouseup="setActive(item.id, 'link', false)"
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect x="9" y="9" width="13" height="13" rx="2" ry="2" stroke="currentColor" stroke-width="2"/>
+            <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1" stroke="currentColor" stroke-width="2"/>
+          </svg>
+          Link
+        </button>
       </div>
     </div>
 
+    <!-- Empty state -->
+    <div v-if="!processedItems.length" class="empty-state" :style="emptyStateStyle">
+      No public pages to display.
+    </div>
   </div>
 </template>
 
 <script>
-import { ref, computed, watch } from 'vue';
+import { computed, ref, watch } from 'vue';
 
 export default {
+  name: 'PublicPagesCardList',
+
   props: {
     uid: { type: String, required: true },
     content: { type: Object, required: true },
@@ -134,469 +165,435 @@ export default {
   emits: ['trigger-event'],
 
   setup(props, { emit }) {
+    /* wwEditor:start */
+    const isEditing = computed(() => props.wwEditorState?.isEditing);
+    /* wwEditor:end */
 
-    // ---------- Filter state ----------
-    const searchText = ref('');
-    const statusFilter = ref('all');
+    const { value: selectedItem, setValue: setSelectedItem } =
+      wwLib.wwVariable.useComponentVariable({
+        uid: props.uid,
+        name: 'selectedItem',
+        type: 'object',
+        defaultValue: null,
+      });
 
-    function resetFilters() {
-      searchText.value = '';
-      statusFilter.value = 'all';
-    }
+    const { value: itemCount, setValue: setItemCount } =
+      wwLib.wwVariable.useComponentVariable({
+        uid: props.uid,
+        name: 'itemCount',
+        type: 'number',
+        defaultValue: 0,
+      });
 
-    // ---------- Hover / Active state ----------
     const hoverState = ref({});
     const activeState = ref({});
 
-    function setHover(type, id, val) {
-      var key = type + '_' + id;
-      var next = {};
-      var keys = Object.keys(hoverState.value);
-      for (var i = 0; i < keys.length; i++) {
-        next[keys[i]] = hoverState.value[keys[i]];
-      }
-      next[key] = val;
-      hoverState.value = next;
-    }
+    const setHover = (id, btn, val) => {
+      hoverState.value = { ...hoverState.value, [id + '-' + btn]: val };
+    };
 
-    function setActive(type, id, val) {
-      var key = type + '_' + id;
-      var next = {};
-      var keys = Object.keys(activeState.value);
-      for (var i = 0; i < keys.length; i++) {
-        next[keys[i]] = activeState.value[keys[i]];
-      }
-      next[key] = val;
-      activeState.value = next;
-    }
+    const setActive = (id, btn, val) => {
+      activeState.value = { ...activeState.value, [id + '-' + btn]: val };
+    };
 
-    function getOpenButtonStyle(id) {
-      var isActive = activeState.value['open_' + id];
-      var isHovered = hoverState.value['open_' + id];
-      if (isActive) {
-        return { backgroundColor: '#1a4a35', borderColor: '#1a4a35', color: '#fff' };
-      }
-      if (isHovered) {
-        return { backgroundColor: '#245a41', borderColor: '#245a41', color: '#fff' };
-      }
-      return {};
-    }
+    const darken = (hex, amount) => {
+      const h = (hex || '#2d6a4f').replace('#', '');
+      const num = parseInt(h.length === 3 ? h[0]+h[0]+h[1]+h[1]+h[2]+h[2] : h, 16);
+      const r = Math.max(0, (num >> 16) - amount);
+      const g = Math.max(0, ((num >> 8) & 0xff) - amount);
+      const b = Math.max(0, (num & 0xff) - amount);
+      return '#' + [r, g, b].map(function(v) { return v.toString(16).padStart(2, '0'); }).join('');
+    };
 
-    function getEditButtonStyle(id) {
-      var isActive = activeState.value['edit_' + id];
-      var isHovered = hoverState.value['edit_' + id];
-      if (isActive) {
-        return { backgroundColor: '#2d6a4f', color: '#fff' };
-      }
-      if (isHovered) {
-        return { backgroundColor: 'rgba(45,106,79,0.08)' };
-      }
-      return {};
-    }
-
-    // ---------- File badge derivation ----------
-    function deriveFileBadges(patterns) {
-      if (!Array.isArray(patterns) || patterns.length === 0) return [];
-      var badges = [];
-      var hasPdf = false;
-      var hasImage = false;
-      var hasOffice = false;
-      for (var i = 0; i < patterns.length; i++) {
-        var p = patterns[i] || '';
-        if (p.indexOf('pdf') !== -1) hasPdf = true;
-        if (p.indexOf('image') !== -1 || p.indexOf('png') !== -1 || p.indexOf('jpg') !== -1 || p.indexOf('jpeg') !== -1 || p.indexOf('gif') !== -1 || p.indexOf('webp') !== -1) hasImage = true;
-        if (p.indexOf('word') !== -1 || p.indexOf('excel') !== -1 || p.indexOf('powerpoint') !== -1 || p.indexOf('spreadsheet') !== -1 || p.indexOf('presentation') !== -1 || p.indexOf('msword') !== -1 || p.indexOf('officedocument') !== -1) hasOffice = true;
-      }
-      if (hasPdf) badges.push('PDF');
-      if (hasImage) badges.push('Images');
-      if (hasOffice) badges.push('Office');
+    const getMimeBadges = (patterns) => {
+      if (!Array.isArray(patterns) || !patterns.length) return [];
+      const badges = [];
+      patterns.forEach(function(p) {
+        const val = (p && (p.value || p)) || '';
+        if (val === 'application/pdf') badges.push('PDF');
+        else if (val === 'image/*') badges.push('Images');
+        else if (val === 'application/*') badges.push('Office');
+      });
       return badges;
-    }
+    };
 
-    // ---------- Max size display ----------
-    function deriveMaxSize(bytes) {
-      if (bytes === null || bytes === undefined || bytes === '') return '—';
-      var num = Number(bytes);
-      if (isNaN(num) || num <= 0) return '—';
-      return (num / (1024 * 1024)).toFixed(0) + ' MB';
-    }
-
-    // ---------- Expiry date display ----------
-    function deriveExpiry(val) {
+    const formatExpiry = (val) => {
       if (!val) return 'mm/dd/yyyy';
       try {
-        var d = new Date(val);
+        const d = new Date(val);
         if (isNaN(d.getTime())) return 'mm/dd/yyyy';
-        var mm = String(d.getMonth() + 1).padStart(2, '0');
-        var dd = String(d.getDate()).padStart(2, '0');
-        var yyyy = d.getFullYear();
+        const mm = String(d.getMonth() + 1).padStart(2, '0');
+        const dd = String(d.getDate()).padStart(2, '0');
+        const yyyy = d.getFullYear();
         return mm + '/' + dd + '/' + yyyy;
       } catch (e) {
         return 'mm/dd/yyyy';
       }
-    }
+    };
 
-    // ---------- Processed items ----------
-    const processedItems = computed(function() {
-      var items = (props.content && props.content.data) ? props.content.data : [];
-      var formulaUtils = wwLib.wwFormula.useFormula();
-      var resolveMappingFormula = formulaUtils.resolveMappingFormula;
+    const formatMaxBytes = (bytes) => {
+      if (!bytes && bytes !== 0) return '—';
+      return Math.round(bytes / (1024 * 1024)) + ' MB';
+    };
 
-      var result = [];
-      for (var i = 0; i < items.length; i++) {
-        var item = items[i];
-        var id = resolveMappingFormula(props.content && props.content.dataIdFormula, item) || item.id || '';
-        var name = resolveMappingFormula(props.content && props.content.dataNameFormula, item) || item.name || '';
-        var resolvedIsEnabled = resolveMappingFormula(props.content && props.content.dataIsEnabledFormula, item);
-        if (resolvedIsEnabled === null || resolvedIsEnabled === undefined) {
-          resolvedIsEnabled = item.is_enabled || false;
-        }
+    const processedItems = computed(() => {
+      const items = props.content?.data || [];
+      const { resolveMappingFormula } = wwLib.wwFormula.useFormula();
 
-        result.push({
-          id: id,
-          name: name,
-          is_enabled: resolvedIsEnabled,
-          allowed_mime_patterns: item.allowed_mime_patterns || [],
-          max_bytes: item.max_bytes || null,
-          instructions: item.instructions || '',
-          expires_at: item.expires_at || null,
-          captcha_required: item.captcha_required || false,
-          folder_id: item.folder_id || null,
-          token: item.token || '',
-          created_at: item.created_at || null,
-          fileBadges: deriveFileBadges(item.allowed_mime_patterns || []),
-          maxSizeDisplay: deriveMaxSize(item.max_bytes),
-          expiryDisplay: deriveExpiry(item.expires_at),
-          _raw: item,
-        });
-      }
-      return result;
+      return items.map(function(item) {
+        const id = resolveMappingFormula(props.content?.dataIdFormula, item) ?? item?.id;
+        const name = resolveMappingFormula(props.content?.dataNameFormula, item) ?? item?.name;
+        const folder_name = resolveMappingFormula(props.content?.dataFolderNameFormula, item) ?? item?.folder_name;
+        const is_enabled = resolveMappingFormula(props.content?.dataIsEnabledFormula, item) ?? item?.is_enabled;
+        const allowed_mime_patterns = resolveMappingFormula(props.content?.dataAllowedMimeFormula, item) ?? item?.allowed_mime_patterns;
+        const max_bytes = resolveMappingFormula(props.content?.dataMaxBytesFormula, item) ?? item?.max_bytes;
+        const instructions = resolveMappingFormula(props.content?.dataInstructionsFormula, item) ?? item?.instructions;
+        const expires_at = resolveMappingFormula(props.content?.dataExpiresAtFormula, item) ?? item?.expires_at;
+        const captcha_required = resolveMappingFormula(props.content?.dataCaptchaRequiredFormula, item) ?? item?.captcha_required;
+
+        return {
+          ...item,
+          id: id ?? 'item-' + Math.random(),
+          name: name ?? 'Untitled',
+          folder_name: folder_name ?? '',
+          is_enabled: Boolean(is_enabled),
+          allowed_mime_patterns: allowed_mime_patterns ?? [],
+          max_bytes: max_bytes ?? 0,
+          instructions: instructions ?? '',
+          expires_at: expires_at ?? null,
+          captcha_required: Boolean(captcha_required),
+          fileBadges: getMimeBadges(allowed_mime_patterns ?? item?.allowed_mime_patterns ?? []),
+          maxSizeDisplay: formatMaxBytes(max_bytes ?? item?.max_bytes),
+          expiryDisplay: formatExpiry(expires_at ?? item?.expires_at),
+          _original: item,
+        };
+      });
     });
 
-    // ---------- Filtered items ----------
-    const filteredItems = computed(function() {
-      var search = searchText.value ? searchText.value.toLowerCase() : '';
-      var status = statusFilter.value || 'all';
-      var all = processedItems.value;
-      var result = [];
-      for (var i = 0; i < all.length; i++) {
-        var item = all[i];
-        var nameMatch = !search || (item.name && item.name.toLowerCase().indexOf(search) !== -1);
-        var statusMatch = status === 'all' ||
-          (status === 'active' && item.is_enabled === true) ||
-          (status === 'inactive' && item.is_enabled !== true);
-        if (nameMatch && statusMatch) result.push(item);
-      }
-      return result;
-    });
+    watch(processedItems, function(items) { setItemCount(items?.length ?? 0); }, { immediate: true });
 
-    // ---------- Internal variables ----------
-    var selectedItemVar = wwLib.wwVariable.useComponentVariable({
-      uid: props.uid,
-      name: 'selectedItem',
-      type: 'object',
-      defaultValue: null,
-    });
-    var setSelectedItem = selectedItemVar.setValue;
+    const resolvedPrimaryColor = computed(() => props.content?.primaryColor || '#2d6a4f');
+    const resolvedOutlineColor = computed(() => props.content?.outlineColor || '#2d6a4f');
 
-    var itemCountVar = wwLib.wwVariable.useComponentVariable({
-      uid: props.uid,
-      name: 'itemCount',
-      type: 'number',
-      defaultValue: 0,
-    });
-    var setItemCount = itemCountVar.setValue;
+    const containerStyle = computed(() => ({
+      '--pp-primary': resolvedPrimaryColor.value,
+      '--pp-outline': resolvedOutlineColor.value,
+      '--pp-card-bg': props.content?.cardBackground || '#ffffff',
+      '--pp-card-border': props.content?.cardBorderColor || '#e5e7eb',
+      '--pp-card-radius': (props.content?.cardBorderRadius ?? 8) + 'px',
+      '--pp-label-color': props.content?.labelTextColor || '#6b7280',
+      '--pp-value-color': props.content?.valueTextColor || '#111827',
+      '--pp-gap': (props.content?.cardGap ?? 12) + 'px',
+      '--pp-font-size': (props.content?.fontSize ?? 14) + 'px',
+      display: 'flex',
+      flexDirection: 'column',
+      gap: (props.content?.cardGap ?? 12) + 'px',
+      width: '100%',
+    }));
 
-    var filteredCountVar = wwLib.wwVariable.useComponentVariable({
-      uid: props.uid,
-      name: 'filteredCount',
-      type: 'number',
-      defaultValue: 0,
-    });
-    var setFilteredCount = filteredCountVar.setValue;
+    const cardStyle = computed(() => ({
+      background: props.content?.cardBackground || '#ffffff',
+      border: '1px solid ' + (props.content?.cardBorderColor || '#e5e7eb'),
+      borderRadius: (props.content?.cardBorderRadius ?? 8) + 'px',
+      fontSize: (props.content?.fontSize ?? 14) + 'px',
+    }));
 
-    watch(processedItems, function(val) {
-      setItemCount(val ? val.length : 0);
-    }, { immediate: true });
+    const labelStyle = computed(() => ({
+      color: props.content?.labelTextColor || '#6b7280',
+      fontSize: (props.content?.fontSize ?? 14) + 'px',
+    }));
 
-    watch(filteredItems, function(val) {
-      setFilteredCount(val ? val.length : 0);
-    }, { immediate: true });
+    const valueStyle = computed(() => ({
+      color: props.content?.valueTextColor || '#111827',
+      fontSize: (props.content?.fontSize ?? 14) + 'px',
+    }));
 
-    // ---------- Event handlers ----------
-    function handleOpen(item) {
-      setSelectedItem(item._raw || item);
-      emit('trigger-event', { name: 'open-click', event: { row: item._raw || item } });
-    }
+    const activeBadgeStyle = computed(() => ({
+      backgroundColor: '#d1fae5',
+      color: '#065f46',
+      fontSize: (props.content?.fontSize ?? 14) + 'px',
+    }));
 
-    function handleEdit(item) {
-      setSelectedItem(item._raw || item);
-      emit('trigger-event', { name: 'edit-click', event: { row: item._raw || item } });
-    }
+    const inactiveBadgeStyle = computed(() => ({
+      backgroundColor: '#f3f4f6',
+      color: '#6b7280',
+      fontSize: (props.content?.fontSize ?? 14) + 'px',
+    }));
 
-    function handleNameClick(item) {
-      setSelectedItem(item._raw || item);
-      emit('trigger-event', { name: 'name-click', event: { row: item._raw || item } });
-    }
+    const fileBadgeStyle = computed(() => ({
+      backgroundColor: resolvedPrimaryColor.value,
+      color: '#ffffff',
+      fontSize: ((props.content?.fontSize ?? 14) - 1) + 'px',
+    }));
+
+    const checkedBoxStyle = computed(() => ({
+      backgroundColor: resolvedPrimaryColor.value,
+      borderColor: resolvedPrimaryColor.value,
+    }));
+
+    const uncheckedBoxStyle = computed(() => ({
+      backgroundColor: '#ffffff',
+      borderColor: '#d1d5db',
+    }));
+
+    const emptyStateStyle = computed(() => ({
+      color: props.content?.labelTextColor || '#6b7280',
+      fontSize: (props.content?.fontSize ?? 14) + 'px',
+    }));
+
+    const getEditButtonStyle = function(id) {
+      const isActive = activeState.value[id + '-edit'];
+      const isHovered = hoverState.value[id + '-edit'];
+      const base = resolvedOutlineColor.value;
+      const darkened = isActive ? darken(base, 40) : isHovered ? darken(base, 20) : base;
+      return {
+        backgroundColor: isHovered ? darkened : '#ffffff',
+        color: isHovered ? '#ffffff' : base,
+        borderColor: darkened,
+        fontSize: (props.content?.fontSize ?? 14) + 'px',
+        boxShadow: isHovered && !isActive ? '0 2px 6px rgba(0,0,0,0.18)' : 'none',
+        transform: isActive ? 'scale(0.97)' : 'scale(1)',
+        transition: 'background-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease, transform 0.1s ease',
+      };
+    };
+
+    const getInstructionsButtonStyle = function(id) {
+      const isActive = activeState.value[id + '-instructions'];
+      const isHovered = hoverState.value[id + '-instructions'];
+      const base = resolvedOutlineColor.value;
+      const darkened = isActive ? darken(base, 40) : isHovered ? darken(base, 20) : base;
+      return {
+        backgroundColor: isHovered ? darkened : '#ffffff',
+        color: isHovered ? '#ffffff' : base,
+        borderColor: darkened,
+        fontSize: ((props.content?.fontSize ?? 14) - 1) + 'px',
+        boxShadow: isHovered && !isActive ? '0 2px 6px rgba(0,0,0,0.18)' : 'none',
+        transform: isActive ? 'scale(0.97)' : 'scale(1)',
+        transition: 'background-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease, transform 0.1s ease',
+      };
+    };
+
+    const getIconButtonStyle = function(id, key) {
+      const isActive = activeState.value[id + '-' + key];
+      const isHovered = hoverState.value[id + '-' + key];
+      const base = resolvedOutlineColor.value;
+      return {
+        color: isHovered ? darken(base, 20) : base,
+        backgroundColor: isHovered ? (isActive ? '#f3f4f6' : '#f9fafb') : 'transparent',
+        borderColor: 'transparent',
+        fontSize: (props.content?.fontSize ?? 14) + 'px',
+        transform: isActive ? 'scale(0.95)' : 'scale(1)',
+        transition: 'color 0.15s ease, background-color 0.15s ease, transform 0.1s ease',
+      };
+    };
+
+    const handleEdit = function(item) {
+      const payload = item?._original ?? item;
+      setSelectedItem(payload);
+      emit('trigger-event', { name: 'edit-click', event: { page: payload } });
+    };
+
+    const handleInstructions = function(item) {
+      const payload = item?._original ?? item;
+      setSelectedItem(payload);
+      emit('trigger-event', { name: 'instructions-click', event: { page: payload } });
+    };
+
+    const handleShare = function(item) {
+      const payload = item?._original ?? item;
+      setSelectedItem(payload);
+      emit('trigger-event', { name: 'share-click', event: { page: payload } });
+    };
+
+    const handleLink = function(item) {
+      const payload = item?._original ?? item;
+      setSelectedItem(payload);
+      emit('trigger-event', { name: 'link-click', event: { page: payload } });
+    };
 
     return {
-      props,
-      searchText,
-      statusFilter,
-      resetFilters,
-      hoverState,
-      activeState,
+      processedItems,
+      containerStyle,
+      cardStyle,
+      labelStyle,
+      valueStyle,
+      activeBadgeStyle,
+      inactiveBadgeStyle,
+      fileBadgeStyle,
+      checkedBoxStyle,
+      uncheckedBoxStyle,
+      emptyStateStyle,
+      getEditButtonStyle,
+      getInstructionsButtonStyle,
+      getIconButtonStyle,
+      handleEdit,
+      handleInstructions,
+      handleShare,
+      handleLink,
       setHover,
       setActive,
-      getOpenButtonStyle,
-      getEditButtonStyle,
-      filteredItems,
-      handleOpen,
-      handleEdit,
-      handleNameClick,
+      selectedItem,
+      itemCount,
+      /* wwEditor:start */
+      isEditing,
+      /* wwEditor:end */
     };
   },
 };
 </script>
 
 <style scoped>
-.portal-cards-root {
+.pp-card-list {
   width: 100%;
   box-sizing: border-box;
-  font-family: inherit;
-  padding: 0;
 }
 
-/* ---- Filter Bar ---- */
-.filter-bar {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 10px 0 12px 0;
-  flex-wrap: nowrap;
-}
-
-.filter-search-wrap {
-  position: relative;
-  display: flex;
-  align-items: center;
-  flex: 1 1 0;
-  min-width: 0;
-}
-
-.search-icon {
-  position: absolute;
-  left: 10px;
-  pointer-events: none;
-  flex-shrink: 0;
-}
-
-.filter-input {
+.pp-card {
   width: 100%;
-  padding: 8px 28px 8px 32px;
-  border: 1px solid #d1d5db;
-  border-radius: 6px;
-  font-size: 13px;
-  color: #333;
-  background: #fff;
   box-sizing: border-box;
-  outline: none;
-}
-
-.filter-input:focus {
-  border-color: #2d6a4f;
-}
-
-.filter-select-wrap {
-  position: relative;
+  padding: 16px;
   display: flex;
-  align-items: center;
-  flex-shrink: 0;
-}
-
-.filter-select {
-  -webkit-appearance: none;
-  appearance: none;
-  padding: 8px 28px 8px 10px;
-  border: 1px solid #d1d5db;
-  border-radius: 6px;
-  font-size: 13px;
-  color: #333;
-  background: #fff;
-  cursor: pointer;
-  outline: none;
-  min-width: 100px;
-}
-
-.filter-select:focus {
-  border-color: #2d6a4f;
-}
-
-.clear-btn {
-  position: absolute;
-  right: 8px;
-  background: none;
-  border: none;
-  color: #aaa;
-  font-size: 11px;
-  cursor: pointer;
-  padding: 0;
-  line-height: 1;
-  top: 50%;
-  transform: translateY(-50%);
-}
-
-.clear-btn:hover {
-  color: #555;
-}
-
-.clear-btn-select {
-  right: 6px;
-}
-
-.reset-link {
-  background: none;
-  border: none;
-  color: #2d6a4f;
-  font-size: 13px;
-  text-decoration: underline;
-  cursor: pointer;
-  padding: 0;
-  white-space: nowrap;
-  flex-shrink: 0;
-}
-
-.reset-link:hover {
-  color: #1a4a35;
-}
-
-/* ---- Empty State ---- */
-.empty-state {
-  text-align: center;
-  color: #888;
-  font-size: 14px;
-  padding: 32px 0;
-}
-
-/* ---- Cards ---- */
-.portal-card {
-  background: #fff;
-  border: 1px solid #e5e7eb;
-  border-radius: 10px;
-  padding: 14px 16px;
-  margin-bottom: 12px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+  flex-direction: column;
+  gap: 10px;
+  background: var(--pp-card-bg, #ffffff);
+  border: 1px solid var(--pp-card-border, #e5e7eb);
+  border-radius: var(--pp-card-radius, 8px);
+  font-size: var(--pp-font-size, 14px);
 }
 
 .card-actions {
   display: flex;
-  gap: 8px;
-  margin-bottom: 14px;
-}
-
-.btn-open {
-  background-color: #2d6a4f;
-  color: #fff;
-  border: 2px solid #2d6a4f;
-  border-radius: 6px;
-  padding: 7px 18px;
-  font-size: 13px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background-color 0.15s, border-color 0.15s;
-}
-
-.btn-edit {
-  background-color: transparent;
-  color: #2d6a4f;
-  border: 2px solid #2d6a4f;
-  border-radius: 6px;
-  padding: 7px 18px;
-  font-size: 13px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background-color 0.15s;
-}
-
-/* ---- Card Rows ---- */
-.card-row {
-  display: flex;
-  justify-content: space-between;
+  flex-direction: row;
   align-items: center;
-  padding: 6px 0;
-  border-bottom: 1px solid #f3f4f6;
   gap: 8px;
 }
 
-.card-row:last-child {
-  border-bottom: none;
+.card-actions-bottom {
+  border-top: 1px solid var(--pp-card-border, #e5e7eb);
+  padding-top: 10px;
+  margin-top: 2px;
 }
 
-.card-row-wrap {
-  align-items: flex-start;
-}
-
-.card-label {
-  font-size: 12px;
-  color: #6b7280;
-  font-weight: 500;
-  flex-shrink: 0;
-  min-width: 120px;
-}
-
-.card-value {
-  font-size: 13px;
-  color: #111827;
-  text-align: right;
-  word-break: break-word;
-}
-
-.card-value-link {
-  color: #2d6a4f;
-  text-decoration: underline;
-  cursor: pointer;
-}
-
-.card-value-link:hover {
-  color: #1a4a35;
-}
-
-/* ---- Status Badges ---- */
-.badge-active {
-  display: inline-block;
-  background-color: #d1fae5;
-  color: #065f46;
-  font-size: 11px;
-  font-weight: 600;
-  padding: 2px 9px;
-  border-radius: 12px;
-}
-
-.badge-inactive {
-  display: inline-block;
-  background-color: #f3f4f6;
-  color: #6b7280;
-  font-size: 11px;
-  font-weight: 600;
-  padding: 2px 9px;
-  border-radius: 12px;
-}
-
-/* ---- File Type Badges ---- */
-.badge-wrap {
-  display: flex;
-  flex-wrap: wrap;
+.btn-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   gap: 4px;
+  padding: 5px 14px;
+  border-radius: 999px;
+  font-size: var(--pp-font-size, 14px);
+  font-weight: 500;
+  line-height: 1.4;
+  white-space: nowrap;
+  cursor: pointer;
+  user-select: none;
+  border: 1.5px solid;
+}
+
+.btn-icon {
+  padding: 5px 12px;
+  border-radius: 6px;
+  font-size: var(--pp-font-size, 14px);
+}
+
+.card-field {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-height: 22px;
+}
+
+.card-field-column {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+}
+
+.field-label {
+  color: var(--pp-label-color, #6b7280);
+  font-size: var(--pp-font-size, 14px);
+  font-weight: 400;
+  flex-shrink: 0;
+}
+
+.field-value {
+  color: var(--pp-value-color, #111827);
+  font-size: var(--pp-font-size, 14px);
+  font-weight: 500;
+  text-align: right;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-wrap: wrap;
   justify-content: flex-end;
 }
 
-.file-badge {
-  display: inline-block;
-  background-color: #2d6a4f;
-  color: #fff;
-  font-size: 11px;
+.page-name-value {
+  color: var(--pp-value-color, #111827);
   font-weight: 600;
-  padding: 2px 9px;
-  border-radius: 12px;
+  text-align: left;
+}
+
+.folder-name-sub {
+  font-size: calc(var(--pp-font-size, 14px) - 1px);
+  font-style: italic;
+  color: var(--pp-label-color, #6b7280);
+}
+
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 10px;
+  border-radius: 999px;
+  font-size: var(--pp-font-size, 14px);
+  font-weight: 500;
+}
+
+.file-types-value {
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 4px;
+}
+
+.file-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: calc(var(--pp-font-size, 14px) - 1px);
+  font-weight: 600;
+  color: #ffffff;
+  background: var(--pp-primary, #2d6a4f);
+}
+
+.checkbox-value {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+.checkbox-box {
+  width: 16px;
+  height: 16px;
+  border-radius: 3px;
+  border: 1.5px solid #d1d5db;
+  background: #ffffff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  pointer-events: none;
+  user-select: none;
+}
+
+.empty-state {
+  width: 100%;
+  padding: 32px 16px;
+  text-align: center;
+  color: var(--pp-label-color, #6b7280);
+  font-size: var(--pp-font-size, 14px);
+  box-sizing: border-box;
 }
 </style>
