@@ -57,7 +57,6 @@
         >
           Edit
         </button>
-        <span class="read-only-hint">Tap Edit to make changes</span>
       </div>
 
       <!-- Active -->
@@ -657,6 +656,7 @@ export default {
   font-size: var(--pp-font-size, 14px);
   overflow: hidden;
   box-shadow: 0 3px 10px rgba(0,0,0,0.10);
+  margin-bottom: 24px;
 }
 
 /* Action row */
@@ -668,12 +668,6 @@ export default {
   padding: 12px 16px 10px 16px;
   background: #ffffff;
   border-bottom: 1px solid #e5e7eb;
-}
-
-.read-only-hint {
-  font-size: 11px;
-  color: #9ca3af;
-  font-style: italic;
 }
 
 /* Buttons */
