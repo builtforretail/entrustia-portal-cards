@@ -650,10 +650,11 @@ export default {
   flex-direction: column;
   gap: 0;
   background: var(--pp-card-bg, #ffffff);
-  border: 1px solid var(--pp-card-border, #e5e7eb);
+  border: 2px solid var(--pp-primary, #2d6a4f);
   border-radius: var(--pp-card-radius, 8px);
   font-size: var(--pp-font-size, 14px);
   overflow: hidden;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.06);
 }
 
 /* Action row */
@@ -663,7 +664,8 @@ export default {
   align-items: center;
   gap: 10px;
   padding: 12px 16px 10px 16px;
-  border-bottom: 1px solid var(--pp-card-border, #e5e7eb);
+  background: #f0f7f4;
+  border-bottom: 1px solid #c9e0d6;
 }
 
 .read-only-hint {
@@ -815,7 +817,8 @@ export default {
   align-items: center;
   gap: 8px;
   padding: 8px 16px 10px 16px;
-  border-top: 1px solid var(--pp-card-border, #e5e7eb);
+  background: #f0f7f4;
+  border-top: 1px solid #c9e0d6;
 }
 
 .btn-icon-action {
