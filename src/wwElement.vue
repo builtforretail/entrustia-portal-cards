@@ -357,12 +357,14 @@ export default {
         '--pp-card-radius': ((props.content && props.content.cardBorderRadius) || 8) + 'px',
         '--pp-label-color': (props.content && props.content.labelTextColor) || '#6b7280',
         '--pp-value-color': (props.content && props.content.valueTextColor) || '#111827',
-        '--pp-gap': ((props.content && props.content.cardGap) || 24) + 'px',
+        '--pp-gap': ((props.content && props.content.cardGap) || 32) + 'px',
         '--pp-font-size': ((props.content && props.content.fontSize) || 14) + 'px',
         display: 'flex',
         flexDirection: 'column',
-        gap: ((props.content && props.content.cardGap) || 24) + 'px',
+        gap: ((props.content && props.content.cardGap) || 32) + 'px',
         width: '100%',
+        padding: '4px 3px 8px 3px',
+        boxSizing: 'border-box',
       };
     });
 
