@@ -130,7 +130,7 @@
         </span>
       </div>
 
-      <!-- Share + Link -->
+      <!-- Share + Link + Embed -->
       <div class="card-actions-bottom">
         <button
           class="btn-icon-action"
@@ -162,6 +162,22 @@
             <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1" stroke="currentColor" stroke-width="2"/>
           </svg>
           Link
+        </button>
+        <button
+          class="btn-icon-action"
+          :style="getIconButtonStyle(item.id, 'embed')"
+          type="button"
+          @click="handleEmbed(item)"
+          @mouseenter="setHover(item.id, 'embed', true)"
+          @mouseleave="setHover(item.id, 'embed', false)"
+          @mousedown="setActive(item.id, 'embed', true)"
+          @mouseup="setActive(item.id, 'embed', false)"
+        >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <polyline points="16 18 22 12 16 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            <polyline points="8 6 2 12 8 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          Embed
         </button>
       </div>
     </div>
@@ -305,6 +321,7 @@ export default {
         const expires_at = resolveMappingFormula(props.content && props.content.dataExpiresAtFormula, item) || item && item.expires_at;
         const captcha_required = resolveMappingFormula(props.content && props.content.dataCaptchaRequiredFormula, item);
         const captcha_val = captcha_required !== null && captcha_required !== undefined ? captcha_required : (item && item.captcha_required);
+        const token = resolveMappingFormula(props.content && props.content.dataTokenFormula, item) || item && item.token || '';
 
         return {
           id: id || ('item-' + Math.random()),
@@ -316,6 +333,7 @@ export default {
           instructions: instructions,
           expires_at: expires_at || null,
           captcha_required: Boolean(captcha_val),
+          token: token,
           fileBadges: getMimeBadges(allowed_mime_patterns),
           maxSizeDisplay: formatMaxBytes(max_bytes || item && item.max_bytes),
           expiryDisplay: formatExpiry(expires_at || item && item.expires_at),
@@ -490,6 +508,12 @@ export default {
       emit('trigger-event', { name: 'link-click', event: { page: payload } });
     };
 
+    const handleEmbed = function(item) {
+      const payload = item._original || item;
+      setSelectedItem(payload);
+      emit('trigger-event', { name: 'embed-click', event: { page: payload } });
+    };
+
     return {
       props,
       processedItems,
@@ -518,6 +542,7 @@ export default {
       handleInstructions,
       handleShare,
       handleLink,
+      handleEmbed,
       setHover,
       setActive,
       selectedItem,
@@ -802,7 +827,7 @@ export default {
   user-select: none;
 }
 
-/* Share + Link row */
+/* Share + Link + Embed row */
 .card-actions-bottom {
   display: flex;
   flex-direction: row;
