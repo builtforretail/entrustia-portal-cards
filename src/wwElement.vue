@@ -305,7 +305,7 @@ export default {
 
     // Processed items
     const processedItems = computed(function() {
-      const items = props.content && props.content.data || [];
+      const items = Array.isArray(props.content && props.content.data) ? props.content.data : [];
       const formulaObj = wwLib.wwFormula.useFormula();
       const resolveMappingFormula = formulaObj.resolveMappingFormula;
 
@@ -344,7 +344,7 @@ export default {
 
     // Filtered items
     const filteredItems = computed(function() {
-      const items = processedItems.value;
+      const items = Array.isArray(processedItems.value) ? processedItems.value : [];
       const search = (searchText.value || '').toLowerCase();
       const status = statusFilter.value;
 
