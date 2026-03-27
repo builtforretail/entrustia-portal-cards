@@ -282,6 +282,7 @@ export default {
         if (val === 'application/pdf' && !seen['PDF']) { badges.push('PDF'); seen['PDF'] = true; }
         else if (val === 'image/*' && !seen['Images']) { badges.push('Images'); seen['Images'] = true; }
         else if (val === 'application/*' && !seen['Office']) { badges.push('Office'); seen['Office'] = true; }
+        else if (val === 'text/*' && !seen['Text']) { badges.push('Text'); seen['Text'] = true; }
       });
       return badges;
     };
