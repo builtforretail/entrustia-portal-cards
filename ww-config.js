@@ -219,6 +219,18 @@ export default {
         !Array.isArray(content.data) || !content.data.length || !boundProps.data,
     },
 
+    dataTokenFormula: {
+      label: { en: 'Token Field' },
+      type: 'Formula',
+      section: 'settings',
+      options: (content) => ({
+        template: Array.isArray(content.data) && content.data.length > 0 ? content.data[0] : null,
+      }),
+      defaultValue: { type: 'f', code: "context.mapping?.['token']" },
+      hidden: (content, sidepanelContent, boundProps) =>
+        !Array.isArray(content.data) || !content.data.length || !boundProps.data,
+    },
+
     primaryColor: {
       label: { en: 'Primary Color' },
       type: 'Color',
@@ -347,6 +359,11 @@ export default {
     {
       name: 'link-click',
       label: { en: 'On Link click' },
+      event: { page: null },
+    },
+    {
+      name: 'embed-click',
+      label: { en: 'On Embed click' },
       event: { page: null },
     },
   ],
