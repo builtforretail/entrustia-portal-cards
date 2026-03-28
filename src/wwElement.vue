@@ -130,6 +130,18 @@
         </span>
       </div>
 
+      <!-- PIN? -->
+      <div class="card-field readonly-field">
+        <span class="field-label" :style="labelStyle">PIN?</span>
+        <span class="field-value checkbox-value">
+          <span class="checkbox-box" :style="item.pin_required ? checkedBoxStyle : uncheckedBoxStyle" aria-hidden="true">
+            <svg v-if="item.pin_required" width="10" height="8" viewBox="0 0 10 8" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M1 4L3.5 6.5L9 1" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </span>
+        </span>
+      </div>
+
       <!-- Share + Link + Embed -->
       <div class="card-actions-bottom">
         <button
@@ -211,7 +223,6 @@ export default {
     const isEditing = computed(() => props.wwEditorState && props.wwEditorState.isEditing);
     /* wwEditor:end */
 
-    // Internal variables
     const { value: selectedItem, setValue: setSelectedItem } =
       wwLib.wwVariable.useComponentVariable({
         uid: props.uid,
@@ -236,7 +247,6 @@ export default {
         defaultValue: 0,
       });
 
-    // Filter state
     const searchText = ref('');
     const statusFilter = ref('all');
 
@@ -246,7 +256,6 @@ export default {
     const clearStatus = function() { statusFilter.value = 'all'; };
     const resetFilters = function() { searchText.value = ''; statusFilter.value = 'all'; };
 
-    // Hover/active state
     const hoverState = ref({});
     const activeState = ref({});
 
@@ -287,21 +296,20 @@ export default {
       return badges;
     };
 
-const formatExpiry = function(val) {
-  if (!val) return 'mm/dd/yyyy';
-  try {
-    const parts = String(val).split('T')[0].split('-');
-    if (parts.length !== 3) return 'mm/dd/yyyy';
-    return parts[1] + '/' + parts[2] + '/' + parts[0];
-  } catch(e) { return 'mm/dd/yyyy'; }
-};
+    const formatExpiry = function(val) {
+      if (!val) return 'mm/dd/yyyy';
+      try {
+        const parts = String(val).split('T')[0].split('-');
+        if (parts.length !== 3) return 'mm/dd/yyyy';
+        return parts[1] + '/' + parts[2] + '/' + parts[0];
+      } catch(e) { return 'mm/dd/yyyy'; }
+    };
 
     const formatMaxBytes = function(bytes) {
       if (!bytes && bytes !== 0) return '—';
       return Math.round(bytes / (1024 * 1024)) + ' MB';
     };
 
-    // Processed items
     const processedItems = computed(function() {
       const items = Array.isArray(props.content && props.content.data) ? props.content.data : [];
       const formulaObj = wwLib.wwFormula.useFormula();
@@ -319,6 +327,8 @@ const formatExpiry = function(val) {
         const expires_at = resolveMappingFormula(props.content && props.content.dataExpiresAtFormula, item) || item && item.expires_at;
         const captcha_required = resolveMappingFormula(props.content && props.content.dataCaptchaRequiredFormula, item);
         const captcha_val = captcha_required !== null && captcha_required !== undefined ? captcha_required : (item && item.captcha_required);
+        const pin_required = resolveMappingFormula(props.content && props.content.dataPinRequiredFormula, item);
+        const pin_val = pin_required !== null && pin_required !== undefined ? pin_required : (item && item.pin_required);
         const token = resolveMappingFormula(props.content && props.content.dataTokenFormula, item) || item && item.token || '';
 
         return {
@@ -331,6 +341,7 @@ const formatExpiry = function(val) {
           instructions: instructions,
           expires_at: expires_at || null,
           captcha_required: Boolean(captcha_val),
+          pin_required: Boolean(pin_val),
           token: token,
           fileBadges: getMimeBadges(allowed_mime_patterns),
           maxSizeDisplay: formatMaxBytes(max_bytes || item && item.max_bytes),
@@ -340,7 +351,6 @@ const formatExpiry = function(val) {
       });
     });
 
-    // Filtered items
     const filteredItems = computed(function() {
       const items = Array.isArray(processedItems.value) ? processedItems.value : [];
       const search = (searchText.value || '').toLowerCase();
@@ -358,11 +368,9 @@ const formatExpiry = function(val) {
     watch(processedItems, function(items) { setItemCount(items.length || 0); }, { immediate: true });
     watch(filteredItems, function(items) { setFilteredCount(items.length || 0); }, { immediate: true });
 
-    // Resolved colours
     const resolvedPrimaryColor = computed(function() { return (props.content && props.content.primaryColor) || '#2d6a4f'; });
     const resolvedOutlineColor = computed(function() { return (props.content && props.content.outlineColor) || '#2d6a4f'; });
 
-    // Styles
     const containerStyle = computed(function() {
       return {
         '--pp-primary': resolvedPrimaryColor.value,
@@ -481,7 +489,6 @@ const formatExpiry = function(val) {
       };
     };
 
-    // Handlers
     const handleEdit = function(item) {
       const payload = item._original || item;
       setSelectedItem(payload);
@@ -560,7 +567,6 @@ const formatExpiry = function(val) {
   box-sizing: border-box;
 }
 
-/* Filter Bar */
 .filter-bar {
   display: flex;
   flex-direction: row;
@@ -665,7 +671,6 @@ const formatExpiry = function(val) {
   color: #1a4a35;
 }
 
-/* Card */
 .pp-card {
   width: 100%;
   box-sizing: border-box;
@@ -682,7 +687,6 @@ const formatExpiry = function(val) {
   margin-bottom: 16px;
 }
 
-/* Action row */
 .card-actions {
   display: flex;
   flex-direction: row;
@@ -693,7 +697,6 @@ const formatExpiry = function(val) {
   border-bottom: 1px solid #e5e7eb;
 }
 
-/* Buttons */
 .btn-primary {
   display: inline-flex;
   align-items: center;
@@ -723,12 +726,10 @@ const formatExpiry = function(val) {
   border: 1.5px solid;
 }
 
-/* Read-only fields */
 .readonly-field {
   background: #ffffff;
 }
 
-/* Field rows */
 .card-field {
   display: flex;
   flex-direction: row;
@@ -826,7 +827,6 @@ const formatExpiry = function(val) {
   user-select: none;
 }
 
-/* Share + Link + Embed row */
 .card-actions-bottom {
   display: flex;
   flex-direction: row;
@@ -851,7 +851,6 @@ const formatExpiry = function(val) {
   background: transparent;
 }
 
-/* Empty state */
 .empty-state {
   width: 100%;
   padding: 32px 16px;
