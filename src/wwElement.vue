@@ -287,17 +287,14 @@ export default {
       return badges;
     };
 
-    const formatExpiry = function(val) {
-      if (!val) return 'mm/dd/yyyy';
-      try {
-        const d = new Date(val);
-        if (isNaN(d.getTime())) return 'mm/dd/yyyy';
-        const mm = String(d.getMonth() + 1).padStart(2, '0');
-        const dd = String(d.getDate()).padStart(2, '0');
-        const yyyy = d.getFullYear();
-        return mm + '/' + dd + '/' + yyyy;
-      } catch(e) { return 'mm/dd/yyyy'; }
-    };
+const formatExpiry = function(val) {
+  if (!val) return 'mm/dd/yyyy';
+  try {
+    const parts = String(val).split('T')[0].split('-');
+    if (parts.length !== 3) return 'mm/dd/yyyy';
+    return parts[1] + '/' + parts[2] + '/' + parts[0];
+  } catch(e) { return 'mm/dd/yyyy'; }
+};
 
     const formatMaxBytes = function(bytes) {
       if (!bytes && bytes !== 0) return '—';
