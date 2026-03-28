@@ -22,6 +22,7 @@ export default {
           max_bytes: 11534336,
           expires_at: '2026-03-08',
           captcha_required: true,
+          pin_required: false,
           notify_emails: [],
           token: 'abc123',
           is_enabled: true,
@@ -38,6 +39,7 @@ export default {
           max_bytes: 10485760,
           expires_at: null,
           captcha_required: true,
+          pin_required: true,
           notify_emails: [],
           token: 'def456',
           is_enabled: true,
@@ -54,6 +56,7 @@ export default {
           max_bytes: 5242880,
           expires_at: '2026-01-15',
           captcha_required: false,
+          pin_required: false,
           notify_emails: [],
           token: 'ghi789',
           is_enabled: false,
@@ -78,6 +81,7 @@ export default {
             max_bytes: 0,
             expires_at: null,
             captcha_required: false,
+            pin_required: false,
             notify_emails: [],
             token: '',
             is_enabled: false,
@@ -95,6 +99,7 @@ export default {
               max_bytes: { label: { en: 'Max Bytes' }, type: 'Number' },
               expires_at: { label: { en: 'Expires At' }, type: 'Text' },
               captcha_required: { label: { en: 'Captcha Required' }, type: 'OnOff' },
+              pin_required: { label: { en: 'PIN Required' }, type: 'OnOff' },
               notify_emails: { label: { en: 'Notify Emails' }, type: 'Array' },
               token: { label: { en: 'Token' }, type: 'Text' },
               is_enabled: { label: { en: 'Is Enabled' }, type: 'OnOff' },
@@ -215,6 +220,18 @@ export default {
         template: Array.isArray(content.data) && content.data.length > 0 ? content.data[0] : null,
       }),
       defaultValue: { type: 'f', code: "context.mapping?.['captcha_required']" },
+      hidden: (content, sidepanelContent, boundProps) =>
+        !Array.isArray(content.data) || !content.data.length || !boundProps.data,
+    },
+
+    dataPinRequiredFormula: {
+      label: { en: 'PIN Required Field' },
+      type: 'Formula',
+      section: 'settings',
+      options: (content) => ({
+        template: Array.isArray(content.data) && content.data.length > 0 ? content.data[0] : null,
+      }),
+      defaultValue: { type: 'f', code: "context.mapping?.['pin_required']" },
       hidden: (content, sidepanelContent, boundProps) =>
         !Array.isArray(content.data) || !content.data.length || !boundProps.data,
     },
